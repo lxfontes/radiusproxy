@@ -1,0 +1,16 @@
+== Purpose ==
+Reliable radius proxy for accounting packets.
+*This is not suitable for authentication*
+
+Should implement 2 basic modes:
+1. Accounting Start is received and replied right away. Proxied requests are made in the background to final servers. (async)
+2. Accounting Start is received and reply is only sent after all final servers ack'ed the request. (sync)
+
+Besides the naming (async/sync) all operations rely on libev reactor and are asynchronours.
+
+== Requirements ==
+* libev (shipped)
+* glib > 2.24.0 (maybe will remove this)
+
+== Usage ==
+
