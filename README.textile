@@ -11,11 +11,21 @@ Should implement 2 basic modes:
 
 Besides the naming (async/sync) all operations rely on libev reactor and are asynchronours.
 
-h2. Requirements
+h2. Required libs
 
 * libev (shipped)
-* glib > 2.24.0 (maybe will remove this)
+* uthash (shipped)
+* libmd5-rfc (shipped)
 
 h2. Usage 
+
+meh
+
+h3. TODO
+
+* Configuration
+* Validate auth field from remote servers (client side)
+* Retransmission checks on server side
+* Code cleanup and signal handling for stats/configchanges/shutdown
 
 
