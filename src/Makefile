@@ -1,12 +1,17 @@
 CC:=gcc
 DEBUG=1
 
-CFLAGS=-I../deps/libev -DEV_STANDALONE=1 -DEV_FEATURES=0 -DEV_MULTIPLICITY=1 -DEV_USE_POLL=1
+CFLAGS=-I../deps/libev -DEV_STANDALONE=1
 
 CFLAGS+=-I../deps/uthash
 OBJS=radiusproxy.o md5.o
-LIBS+=-lm -lrt -Wl,--gc-sections -ffunction-sections
+LIBS+=-lm
 
+SYS=$(shell uname -s)
+
+ifeq ($(SYS), Linux)
+	LIBS+=-lrt -Wl,--gc-sections -ffunction-sections
+endif
 
 ifeq ($(DEBUG), 1)
 	CFLAGS += -ggdb -DDEBUG
