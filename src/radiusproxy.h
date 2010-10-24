@@ -31,7 +31,6 @@ struct radius_server{
   struct radius_peer *peers;
   struct radius_peer *local;
   char secret[16];
-  in_addr_t nasip;
   int retrysecs;
   int retrycount;
 };

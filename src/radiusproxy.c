@@ -209,37 +209,79 @@ struct radius_peer *new_radius_peer(char *name,char *port){
 }
 
 int main(int argc,char **argv){
+  int c;
+  char *host, *port;
+  char *localhost,*localport;
+  struct radius_peer *remote = NULL;
 
-  server.local = new_radius_peer("0.0.0.0","1813");
-  server.nasip = inet_addr("127.0.0.1");
-  sprintf(server.secret,"testing123");
+  opterr = 0;
+
   server.retrysecs = 1;
   server.retrycount = 3;
   server.peers = NULL;
 
+  sprintf(server.secret,"testing123");
+  localhost = "0.0.0.0";
+  localport = "1813";
+
+  struct ev_loop *loop = ev_default_loop(0);
+
+  while ((c = getopt (argc, argv, "b:s:f:h")) != -1){
+    switch(c){
+      case 'b':
+        localhost = optarg;
+        localport = index(localhost,':');
+        if(localport != NULL){
+          *localport = '\0';
+          localport++;
+        }else{
+          localport="1813";
+        }
+        break;
+      case 's':
+        snprintf(server.secret,16,"%s",optarg);
+        break;
+      case 'f':
+        host = optarg;
+        port = index(host,':');
+        if(port != NULL){
+          *port = '\0';
+          port++;
+        }else{
+          port="1813";
+        }
+
+        printf("Adding watcher %s:%s\n",host,port);
+        /* one watcher per server */
+        remote = new_radius_peer(host,port);
+        ev_io_init(&remote->iow, consumer_cb, remote->fd, EV_READ);
+        ev_io_start(loop,&remote->iow);
+        LL_APPEND(server.peers,remote);
+        break;
+      case 'h':
+      default:
+        printf("%s -b ip:port -s secret -f ip:port [-f ip:port]\n",argv[0]);
+        printf("\t -b Local IP and port. Default %s:%s.\n",localhost,localport);
+        printf("\t -s Shared secret. Default %s.\n",server.secret);
+        printf("\t -f Remote IP and port. Can be repeated N times.\n");
+        exit(0);
+    }
+  }
+  
+  if(server.peers == NULL){
+    fprintf(stderr,"Missing remote peers\n");
+    exit(1);
+  }
+
+  printf("Binding proxy on %s:%s\n",localhost,localport);
+  server.local = new_radius_peer(localhost,localport);
+
   if (bind(server.local->fd, (struct sockaddr*) &server.local->addr, sizeof(server.local->addr)) != 0)
     perror("bind");
 
-  struct ev_loop *loop = ev_default_loop(0);
   ev_io udp_watcher;
   ev_io_init(&udp_watcher, producer_cb, server.local->fd, EV_READ);
   ev_io_start(loop, &udp_watcher);
-
-
-  /* one watcher per server */
-  {
-    struct radius_peer *remote = new_radius_peer("127.0.0.1","1913");
-    ev_io_init(&remote->iow, consumer_cb, remote->fd, EV_READ);
-    ev_io_start(loop,&remote->iow);
-    LL_APPEND(server.peers,remote);
-
-    remote = new_radius_peer("127.0.0.1","1815");
-    ev_io_init(&remote->iow, consumer_cb, remote->fd, EV_READ);
-    ev_io_start(loop,&remote->iow);
-    LL_APPEND(server.peers,remote);
-
-  }
-
 
   ev_loop(loop, 0);
 
